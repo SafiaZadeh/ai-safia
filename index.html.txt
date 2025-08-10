@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Ai-safia — Prototype</title>
+  <style>
+    :root{--bg:#0f172a;--card:#0b1220;--accent:#7c3aed;--muted:#94a3b8;--glass:rgba(255,255,255,0.03)}
+    html,body{height:100%;margin:0;font-family:IRANSans,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    body{background:linear-gradient(180deg,#071029 0%, #081226 100%);color:#e6eef8;display:flex;align-items:flex-start;justify-content:center;padding:28px}
+    .container{width:980px;max-width:96%;}
+    header{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+    header h1{margin:0;font-size:20px}
+    .card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 6px 20px rgba(2,6,23,0.6)}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:16px}
+    textarea{width:100%;height:150px;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:inherit;resize:vertical}
+    button{background:var(--accent);border:0;padding:10px 14px;border-radius:10px;color:white;cursor:pointer}
+    .muted{color:var(--muted);font-size:13px}
+    .gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+    .imgwrap{position:relative;border-radius:10px;overflow:hidden;background:#071329;padding:6px}
+    .imgwrap img{width:100%;height:220px;object-fit:cover;display:block}
+    .img-actions{display:flex;gap:8px;padding:8px 0;justify-content:flex-start}
+    .small{font-size:13px;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.03);cursor:pointer}
+    footer{margin-top:12px;color:var(--muted);font-size:13px}
+    .loader{display:inline-block;border:3px solid rgba(255,255,255,0.06);border-left-color:var(--accent);width:18px;height:18px;border-radius:50%;animation:spin 1s linear infinite;vertical-align:middle}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @media (max-width:800px){.grid{grid-template-columns:1fr}} 
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="card" style="display:flex;align-items:center;gap:12px;padding:10px 14px">
+        <strong>Ai-safia — Prototype</strong>
+        <div class="muted">(نسخهٔ اولیه — بدون هزینه)</div>
+      </div>
+    </header>
+
+    <div class="grid">
+      <section class="card">
+        <div>
+          <label class="muted">متن برای تولید تصویر</label>
+          <textarea id="prompt" placeholder="مثال: a surreal pastel landscape with floating islands and neon lights"></textarea>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:10px">
+          <button id="generate">تولید تصویر</button>
+          <div id="status" class="muted">آماده</div>
+        </div>
+
+        <div class="muted" style="margin-top:12px">راهنما: این نسخه در حالت demo وقتی API تنظیم نشده از تصاویر عمومی Unsplash استفاده می‌کند تا فرآیند را شبیه‌سازی کند. برای تولید واقعی باید endpoint سرورلس و کلید API را تنظیم کنید.</div>
+
+        <div class="gallery" id="gallery" style="margin-top:14px"></div>
+      </section>
+
+      <aside class="card">
+        <div class="muted">تنظیمات سریع</div>
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+          <div class="muted">API_ENDPOINT (اگر خالی بماند: demo)</div>
+          <input id="apiEndpoint" placeholder="مثال: https://yoursite.netlify.app/.netlify/functions/generate" style="padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit">
+          <div class="muted">تعداد تصاویر برگردانده‌شده (demo همیشه 1)</div>
+          <input id="count" type="number" min="1" max="4" value="1" style="padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit">
+        </div>
+
+        <div style="margin-top:14px;border-top:1px solid rgba(255,255,255,0.03);padding-top:12px">
+          <div class="muted">راهنمای گام بعدی</div>
+          <ol class="muted" style="padding-left:12px;margin-top:6px">
+            <li>فایل را در ریپوی گیت‌هاب قرار بده و GitHub Pages فعال کن.</li>
+            <li>اگر می‌خواهی به API واقعی وصل شوی، یک تابع سرورلس روی Netlify/Vercel بساز و آدرسش را در API_ENDPOINT وارد کن.</li>
+            <li>کلید API را فقط در متغیرهای محیطی سرورلس ذخیره کن — هرگز آن را در کد فرانت‌اند نذار.</li>
+          </ol>
+        </div>
+      </aside>
+    </div>
+
+    <footer class="muted">آماده‌ام قدم بعدی رو بردارم — می‌خوای من برات تابع سرورلس آماده کنم یا خودت می‌خوای فایل رو روی GitHub بذاری؟</footer>
+  </div>
+
+  <script>
+    // ====== CONFIGURATION ======
+    // اگر می‌خواهی به endpoint واقعی وصل بشه، این متغیر رو بذار خالی و در input 'API_ENDPOINT' آدرس سرورلس رو وارد کن.
+    // در حالت demo (خالی یا نذاشتن آدرس) از Unsplash برای شبیه‌سازی استفاده می‌کنیم.
+    const DEFAULT_API_ENDPOINT = '';
+
+    // ====== UI ======
+    const promptEl = document.getElementById('prompt');
+    const genBtn = document.getElementById('generate');
+    const statusEl = document.getElementById('status');
+    const gallery = document.getElementById('gallery');
+    const apiEndpointInput = document.getElementById('apiEndpoint');
+    const countInput = document.getElementById('count');
+
+    apiEndpointInput.value = DEFAULT_API_ENDPOINT;
+
+    genBtn.addEventListener('click', async () => {
+      const prompt = promptEl.value.trim();
+      if (!prompt) { alert('لطفاً یک متن وارد کنید.'); return; }
+
+      const count = Math.max(1, Math.min(4, parseInt(countInput.value || '1')));
+      genBtn.disabled = true; statusEl.innerHTML = '<span class="loader"></span> در حال تولید...';
+
+      try {
+        const endpoint = apiEndpointInput.value.trim();
+        if (!endpoint) {
+          // DEMO MODE: use unsplash images to simulate
+          for (let i=0;i<count;i++) {
+            const keywords = encodeURIComponent(prompt.split(' ').slice(0,4).join(','));
+            const url = `https://source.unsplash.com/800x500/?${keywords}`; // random image
+            addImageToGallery(url, prompt);
+            await wait(400); // small pause to show progressive loading
+          }
+        } else {
+          // PRODUCTION MODE: call your serverless endpoint which must keep API key secret
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt, n: count })
+          });
+          if (!res.ok) throw new Error('خطا از سرور: ' + res.status);
+          const data = await res.json();
+          // Expecting { imageUrl } or { images: ['url1','url2'] }
+          const images = data.images || (data.imageUrl ? [data.imageUrl] : []);
+          if (images.length === 0) throw new Error('پاسخ معتبر از سرور دریافت نشد.');
+          for (const u of images) addImageToGallery(u, prompt);
+        }
+        statusEl.textContent = 'آماده';
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = 'خطا: ' + (err.message || err);
+      } finally {
+        genBtn.disabled = false;
+      }
+    });
+
+    function addImageToGallery(url, prompt) {
+      const wrap = document.createElement('div'); wrap.className = 'imgwrap';
+      const img = document.createElement('img'); img.src = url; img.alt = prompt;
+      wrap.appendChild(img);
+
+      const actions = document.createElement('div'); actions.className = 'img-actions';
+      const download = document.createElement('button'); download.className = 'small'; download.textContent = 'دانلود';
+      download.addEventListener('click', () => downloadImage(url, prompt));
+      const remove = document.createElement('button'); remove.className = 'small'; remove.textContent = 'حذف';
+      remove.addEventListener('click', () => wrap.remove());
+      actions.appendChild(download); actions.appendChild(remove);
+
+      wrap.appendChild(actions);
+      gallery.prepend(wrap);
+    }
+
+    function downloadImage(url, prompt) {
+      // simple download helper
+      const a = document.createElement('a'); a.href = url; a.download = (prompt||'ai-safia') + '.jpg';
+      document.body.appendChild(a); a.click(); a.remove();
+    }
+
+    function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  </script>
+</body>
+</html>
